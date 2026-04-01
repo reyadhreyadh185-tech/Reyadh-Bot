@@ -9,8 +9,8 @@ app.listen(8080, () => console.log('Web server is ready!'));
 const botArgs = {
     host: 'REA1_CRAFT.aternos.me', // عنوان سيرفرك
     port: 18542,                  // المنفذ الخاص بك
-    username: 'RM_GUARD_FINAL',    // اسم البوت
-    version: '1.21.1'             // إصدار ماينكرافت
+    username: 'RM_GUARD_02',    // اسم البوت
+    version: '1.21.11'             // إصدار ماينكرافت
 };
 
 let bot;
