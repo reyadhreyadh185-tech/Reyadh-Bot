@@ -1,41 +1,54 @@
 const mineflayer = require('mineflayer');
 
 const botArgs = {
-    host: 'REA1_CRAFT.aternos.me', // العنوان الأساسي
-    port: 18542,                   // المنفذ (تأكد منه من صفحة Connect)
-    username: 'RM_GUARD_02',       // اسم البوت
-    version: '1.21.1'              // تأكد أنها نفس نسخة السيرفر
+    host: 'REA1_CRAFT.aternos.me',
+    port: 18542,
+    username: 'RM_GUARD_02',
+    version: '1.21.11' // مطابق لإصدار السيرفر في الصورة
 };
 
 const initBot = () => {
     const bot = mineflayer.createBot(botArgs);
 
-    // نظام منع الطرد (الحركة المستمرة)
     bot.on('spawn', () => {
-        console.log('✅ RM_GUARD_02 دخل الملعب!');
+        console.log('✅ RM_GUARD_02 inside and moving!');
         
-        // البوت سيقفز كل 5 ثوانٍ ليوهم السيرفر أنه لاعب حقيقي
+        let angle = 0;
+        const radius = 10; // قطر الحركة 10 بلوكات
+
+        // حلقة الحركة المستمرة (مشي دائري + قفز)
         setInterval(() => {
-            bot.setControlState('jump', true);
-            setTimeout(() => {
-                bot.setControlState('jump', false);
-            }, 500);
-        }, 5000);
+            // حساب الإحداثيات الجديدة للحركة الدائرية
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            
+            // أمر النظر والتحرك للنقطة التالية
+            bot.lookAt(bot.entity.position.offset(x, 0, z));
+            bot.setControlState('forward', true);
+            
+            // قفزة عشوائية لزيادة التفاعل
+            if (Math.random() > 0.7) {
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 500);
+            }
+
+            angle += 0.5; // سرعة الدوران
+        }, 1000);
     });
 
-    // إعادة الاتصال التلقائي في حال حدث خطأ
-    bot.on('error', (err) => console.log('❌ خطأ في البوت: ', err));
+    // إعادة تشغيل تلقائي عند أي خلل
+    bot.on('error', (err) => console.log('❌ Error: ', err));
     bot.on('end', () => {
-        console.log('🔄 السيرفر أغلق أو البوت طُرد.. إعادة المحاولة بعد 10 ثوانٍ');
+        console.log('🔄 Reconnecting in 10s...');
         setTimeout(initBot, 10000);
     });
 };
 
 initBot();
 
-// كود بسيط لإبقاء خدمة Render تعمل (Web Server)
+// Web Server لإبقاء Render حياً
 const http = require('http');
 http.createServer((req, res) => {
-    res.write('RM_GUARD_02 is Alive!');
+    res.write('RM Guard is Walking & Jumping!');
     res.end();
 }).listen(3000);
