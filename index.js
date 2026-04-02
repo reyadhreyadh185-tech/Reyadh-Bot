@@ -1,77 +1,41 @@
-const express = require('express');
-const mineflayer = require('mineflayer'); // أضفنا هذا السطر الضروري
-const app = express();
-const port = process.env.PORT || 3000;
+const mineflayer = require('mineflayer');
 
-// إعداد السيرفر ليبقى Render مستيقظاً (مرة واحدة فقط)
-app.get('/', (req, res) => {
-  res.send('RM Guard Bot is Alive! ⚔️');
-});
-
-app.listen(port, () => {
-  console.log(`Web server running on port ${port}`);
-});
-
-// إعدادات البوت
 const botArgs = {
-    host: 'REA1_CRAFT.aternos.me', 
-    port: 18542,                  
-    username: 'RM_GUARD_02',    
-    version: '1.21.1' // تأكد من هذا الإصدار (بدون 11 الزائدة)
+    host: 'REA1_CRAFT.aternos.me', // العنوان الأساسي
+    port: 18542,                   // المنفذ (تأكد منه من صفحة Connect)
+    username: 'RM_GUARD_02',       // اسم البوت
+    version: '1.21.1'              // تأكد أنها نفس نسخة السيرفر
 };
 
-let bot;
-let spawnLocation = null;
+const initBot = () => {
+    const bot = mineflayer.createBot(botArgs);
 
-function createBot() {
-    bot = mineflayer.createBot(botArgs);
-
+    // نظام منع الطرد (الحركة المستمرة)
     bot.on('spawn', () => {
-        console.log('⚔️ [RM] تم الدخول بنجاح وبدء الحراسة!');
-        if (bot.entity) {
-            spawnLocation = bot.entity.position.clone();
-            startBehaviors();
-        }
-    });
-
-    function startBehaviors() {
-        // 1. القفز كل 3 ثوانٍ
+        console.log('✅ RM_GUARD_02 دخل الملعب!');
+        
+        // البوت سيقفز كل 5 ثوانٍ ليوهم السيرفر أنه لاعب حقيقي
         setInterval(() => {
-            if (bot.entity) {
-                bot.setControlState('jump', true);
-                setTimeout(() => { if (bot.entity) bot.setControlState('jump', false); }, 500);
-            }
-        }, 3000);
-
-        // 2. تحريك الرأس عشوائياً
-        setInterval(() => {
-            if (bot.entity) {
-                const yaw = (Math.random() - 0.5) * Math.PI * 2;
-                const pitch = (Math.random() - 0.5) * Math.PI;
-                bot.look(yaw, pitch);
-            }
-        }, 2000);
-
-        // 3. المشي العشوائي
-        setInterval(() => {
-            if (!bot.entity || !spawnLocation) return;
-            const dx = (Math.random() - 0.5) * 10; 
-            const dz = (Math.random() - 0.5) * 10;
-            const targetPos = spawnLocation.offset(dx, 0, dz);
-            bot.lookAt(targetPos);
-            bot.setControlState('forward', true);
-            setTimeout(() => { if (bot.entity) bot.setControlState('forward', false); }, 1500);
+            bot.setControlState('jump', true);
+            setTimeout(() => {
+                bot.setControlState('jump', false);
+            }, 500);
         }, 5000);
-    }
+    });
 
+    // إعادة الاتصال التلقائي في حال حدث خطأ
+    bot.on('error', (err) => console.log('❌ خطأ في البوت: ', err));
     bot.on('end', () => {
-        console.log('⚠️ انقطع الاتصال! العودة خلال 5 ثوانٍ...');
-        setTimeout(createBot, 5000); 
+        console.log('🔄 السيرفر أغلق أو البوت طُرد.. إعادة المحاولة بعد 10 ثوانٍ');
+        setTimeout(initBot, 10000);
     });
+};
 
-    bot.on('error', (err) => {
-        console.log('❌ خطأ: ' + err.message);
-    });
-}
+initBot();
 
-createBot();
+// كود بسيط لإبقاء خدمة Render تعمل (Web Server)
+const http = require('http');
+http.createServer((req, res) => {
+    res.write('RM_GUARD_02 is Alive!');
+    res.end();
+}).listen(3000);
