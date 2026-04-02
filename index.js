@@ -11,10 +11,6 @@ app.listen(port, () => {
 });
 
 // --- ضع كود Mineflayer الخاص بك هنا أسفل هذا الخط ---
-const mineflayer = require('mineflayer');
-const express = require('express');
-const app = express();
-
 // إعداد السيرفر ليبقى Render مستيقظاً
 app.get('/', (req, res) => res.send('RM Guard is Online! ⚔️'));
 app.listen(8080, () => console.log('Web server is ready!'));
