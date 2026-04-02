@@ -3,7 +3,7 @@ const mineflayer = require('mineflayer');
 const botArgs = {
     host: 'REA1_CRAFT.aternos.me',
     port: 18542,
-    username: 'RM_GUARD_02',
+    username: 'ALG_BOT',
     version: '1.21.11' // مطابق لإصدار السيرفر في الصورة
 };
 
