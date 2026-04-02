@@ -1,3 +1,16 @@
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('RM Guard Bot is Alive!');
+});
+
+app.listen(port, () => {
+  console.log(`Web server running on port ${port}`);
+});
+
+// --- ضع كود Mineflayer الخاص بك هنا أسفل هذا الخط ---
 const mineflayer = require('mineflayer');
 const express = require('express');
 const app = express();
