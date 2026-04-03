@@ -1,62 +1,73 @@
 const mineflayer = require('mineflayer');
 const http = require('http');
 
-// 1. خادم الويب (لإبقاء Render متصلاً)
+// 1. خادم الويب والنبض الذاتي (لإبقاء Render مستيقظاً)
 http.createServer((req, res) => {
     res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.write('RM Guard is Unstoppable!');
+    res.write('RM Guard is patrolling the stadium!');
     res.end();
-}).listen(3000, () => console.log('🌐 Web Server is Running!'));
+}).listen(3000, () => console.log('🌐 Web Server & Pulse System Active!'));
 
-// 2. نظام النبض الذاتي (السلاح السري لمنع النوم)
-// البوت سيزور رابطه بنفسه كل 4 دقائق لضمان عدم نوم Render
 setInterval(() => {
-    // ضع رابط مشروعك الناجح هنا
     http.get('https://reyadh-bot-4.onrender.com').on('error', (err) => {
-        console.log('⚠️ Pulse error (Ignored)');
+        console.log('⚠️ Pulse skip');
     });
 }, 4 * 60 * 1000); 
 
-// 3. إعدادات البوت والاتصال
+// 2. إعدادات الاتصال
 const botArgs = {
     host: 'REA1_CRAFT.aternos.me',
-    port: 18542, // تأكد أنه نفس البورت الموجود في أترنوس حالياً
-    username: 'RM_GUARD_VVIP', // غيرنا الاسم لتجنب أي طرد سابق
-    version: '1.21.1'
+    port: 18542, 
+    username: 'RM_GUARD_VVIP',
+    version: '1.21.11'
 };
 
 const initBot = () => {
     const bot = mineflayer.createBot(botArgs);
 
+    // متغيرات الحركة
+    let spawnPoint = null;
+    let angle = 0;
+
     bot.on('spawn', () => {
-        console.log('✅ RM_GUARD_VVIP inside the stadium!');
-        let angle = 0;
-        const radius = 10;
+        console.log('✅ RM_GUARD_VVIP has landed at the stadium!');
         
+        // حفظ "مسقط الرأس" فور الرسبنة
+        spawnPoint = bot.entity.position.clone();
+        
+        // حلقة الحركة (كل ثانية)
         setInterval(() => {
-            if (!bot.entity) return;
-            const x = Math.cos(angle) * radius;
-            const z = Math.sin(angle) * radius;
-            bot.lookAt(bot.entity.position.offset(x, 0, z));
+            if (!bot.entity || !spawnPoint) return;
+
+            // حساب النقطة التالية في الدائرة (قطر 8 لضمان البقاء داخل الـ 10)
+            const radius = 8; 
+            const x = spawnPoint.x + Math.cos(angle) * radius;
+            const z = spawnPoint.z + Math.sin(angle) * radius;
+
+            // النظر إلى النقطة المستهدفة والمشي نحوها
+            const target = bot.entity.position.offset(Math.cos(angle), 0, Math.sin(angle));
+            bot.lookAt(target);
             bot.setControlState('forward', true);
-            
-            if (Math.random() > 0.7) {
+
+            // القفز العشوائي لزيادة التفاعل
+            if (Math.random() > 0.8) {
                 bot.setControlState('jump', true);
-                setTimeout(() => bot.setControlState('jump', false), 500);
+                setTimeout(() => bot.setControlState('jump', false), 400);
             }
-            angle += 0.5;
+
+            angle += 0.4; // سرعة الدوران
         }, 1000);
     });
 
-    bot.on('error', (err) => console.log('❌ Bot Error: ', err.message));
+    bot.on('error', (err) => console.log('❌ Error: ', err.message));
     bot.on('end', () => {
-        console.log('🔄 Disconnected! Reconnecting in 10 seconds...');
+        console.log('🔄 Server closed. Reconnecting in 10s...');
         setTimeout(initBot, 10000);
     });
 };
 
 initBot();
 
-// 4. نظام الحماية ضد الانهيار (لمنع توقف السكربت بالكامل)
-process.on('uncaughtException', (err) => console.log('🛡️ Crash prevented: ', err.message));
-process.on('unhandledRejection', (err) => console.log('🛡️ Rejection prevented: ', err.message));
+// حماية ضد الانهيار
+process.on('uncaughtException', (err) => console.log('🛡️ Crash Shield: ', err.message));
+process.on('unhandledRejection', (err) => console.log('🛡️ Rejection Shield: ', err.message));
