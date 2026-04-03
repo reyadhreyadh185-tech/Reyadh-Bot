@@ -18,7 +18,7 @@ setInterval(() => {
 const botArgs = {
     host: 'REA1_CRAFT.aternos.me',
     port: 18542, 
-    username: 'RM_GUARD_VIP',
+    username: 'RM_GUARD_VVIP',
     version: '1.21.11'
 };
 
