@@ -14,7 +14,7 @@ const weaponPattern = [3000, 4000, 9000, 5000];
 function startBot() {
     // 3. الدخول إلى سيرفر البدروك
     const client = bedrock.createClient({
-        host: 'REA1_CRAFT.aternos.me', // عنوان سيرفرك
+        host: 'REA1_CRAFT.RM.aternos.me', // عنوان سيرفرك
         port: 64603,                   // البورت الخاص بك
         username: 'RM_Bot',            // اسم البوت
         offline: true,                 // ضروري جداً ليدخل بدون حساب Xbox رسمي
