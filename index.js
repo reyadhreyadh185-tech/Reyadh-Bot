@@ -1,75 +1,80 @@
-const mineflayer = require('mineflayer');
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const bedrock = require('bedrock-protocol');
 const http = require('http');
 
-// خادم ويب وهمي لكي لا يتوقف البوت في Render
+// 1. خادم الويب لإبقاء البوت مستيقظاً 24/7 في Render
 http.createServer((req, res) => {
     res.writeHead(200);
-    res.end('Bot is Active 24/7');
+    res.end('RM Bot Bedrock is Active 24/7 ⚪👑');
 }).listen(process.env.PORT || 3000);
 
-const bot = mineflayer.createBot({
-    host: 'REA1_CRAFT.aternos.me', 
-    port: 18542,                   
-    username: 'RM_Bot',            
-    version: false                 
-});
+// 2. إعدادات الأوقات التي طلبتها (بالملي ثانية: 3 ثواني = 3000)
+const jumpPattern = [3000, 5000, 4000, 2000, 6000, 9000];
+const weaponPattern = [3000, 4000, 9000, 5000];
 
-bot.loadPlugin(pathfinder);
+function startBot() {
+    // 3. الدخول إلى سيرفر البدروك
+    const client = bedrock.createClient({
+        host: 'REA1_CRAFT.aternos.me', // عنوان سيرفرك
+        port: 64603,                   // البورت الخاص بك
+        username: 'RM_Bot',            // اسم البوت
+        offline: true,                 // ضروري جداً ليدخل بدون حساب Xbox رسمي
+        version: '1.21.130'            // إصدار سيرفرك
+    });
 
-bot.on('spawn', () => {
-    console.log('دخل البوت إلى السيرفر بنجاح!');
-    
-    const defaultMove = new Movements(bot);
-    bot.pathfinder.setMovements(defaultMove);
+    client.on('join', () => {
+        console.log('دخل البوت المدريدي إلى السيرفر بنجاح!');
 
-    // 1. تكتيك القفز (كل 2، 4، 7، 3 ثواني)
-    const jumpPattern = [2000, 4000, 7000, 3000];
-    let jumpIndex = 0;
-    
-    function startJumping() {
-        bot.setControlState('jump', true);
-        setTimeout(() => bot.setControlState('jump', false), 500); 
-        setTimeout(startJumping, jumpPattern[jumpIndex]);
-        jumpIndex = (jumpIndex + 1) % jumpPattern.length; 
-    }
-    startJumping();
-
-    // 2. التحرك في قطر 10 بلوكات
-    setInterval(() => {
-        if (!bot.entity) return;
-        const p = bot.entity.position;
-        const randomX = p.x + (Math.random() * 20 - 10);
-        const randomZ = p.z + (Math.random() * 20 - 10);
-        bot.pathfinder.setGoal(new goals.GoalNearXZ(randomX, randomZ, 1));
-    }, 15000); 
-
-    // 3. تغيير السلاح كل 5 ثواني
-    let currentSlot = 0;
-    setInterval(() => {
-        bot.setQuickBarSlot(currentSlot);
-        currentSlot = (currentSlot + 1) % 9; 
-    }, 5000);
-
-    // 4. فتح أي صندوق أمامه
-    setInterval(async () => {
-        const chest = bot.findBlock({
-            matching: bot.registry.blocksByName.chest.id,
-            maxDistance: 3 
-        });
-
-        if (chest) {
-            try {
-                const container = await bot.openContainer(chest);
-                setTimeout(() => container.close(), 1000); 
-            } catch (err) {}
+        // --- نظام القفز المخصص ---
+        let jumpIndex = 0;
+        function doJump() {
+            // إرسال أمر القفز للسيرفر
+            client.write('player_action', {
+                entity_id: client.entityId,
+                action: 'jump',
+                block_position: { x: 0, y: 0, z: 0 },
+                result_position: { x: 0, y: 0, z: 0 },
+                face: 0
+            });
+            
+            let nextJumpTime = jumpPattern[jumpIndex];
+            jumpIndex = (jumpIndex + 1) % jumpPattern.length; // الانتقال للرقم التالي ثم الإعادة
+            setTimeout(doJump, nextJumpTime);
         }
-    }, 4000); 
-});
+        doJump(); // بدء القفز
 
-// إعادة الاتصال التلقائي
-bot.on('end', () => {
-    console.log('انقطع الاتصال.. سأحاول الدخول مجدداً.');
-    process.exit(1); 
-});
-bot.on('error', err => console.log(err));
+        // --- نظام تغيير السلاح المخصص ---
+        let weaponIndex = 0;
+        let currentSlot = 0;
+        function changeWeapon() {
+            currentSlot = (currentSlot + 1) % 9; // من الخانة 0 إلى 8
+            
+            // إرسال أمر تغيير السلاح
+            client.write('mob_equipment', {
+                runtime_entity_id: client.entityId,
+                item: { network_id: 0 },
+                inventory_slot: currentSlot,
+                hotbar_slot: currentSlot,
+                window_id: 0
+            });
+
+            let nextWeaponTime = weaponPattern[weaponIndex];
+            weaponIndex = (weaponIndex + 1) % weaponPattern.length; // الانتقال للرقم التالي ثم الإعادة
+            setTimeout(changeWeapon, nextWeaponTime);
+        }
+        changeWeapon(); // بدء تغيير السلاح
+    });
+
+    // 4. إعادة الاتصال التلقائي إذا تم طرده أو انغلق السيرفر
+    client.on('disconnect', (packet) => {
+        console.log('انقطع الاتصال.. سأعود بعد 10 ثوانٍ:', packet);
+        setTimeout(startBot, 10000);
+    });
+
+    client.on('error', (err) => {
+        console.log('حدث خطأ:', err);
+        setTimeout(startBot, 10000);
+    });
+}
+
+// تشغيل البوت
+startBot();
