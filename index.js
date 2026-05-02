@@ -15,9 +15,9 @@ function startBot() {
     const client = bedrock.createClient({
         host: 'REA1_CRAFT_RM.aternos.me', // العنوان من صورتك
         port: 64603,                      // المنفذ من صورتك
-        username: 'RM_Bot',
+        username: 'RM_Bot_HH',
         offline: true,                   // للدخول بدون حساب إكس بوكس
-        version: '1.21.131'              // الإصدار من صورتك
+        version: '1.21.0'              // الإصدار من صورتك
     });
 
     client.on('join', () => {
