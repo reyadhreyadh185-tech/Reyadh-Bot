@@ -1,7 +1,7 @@
 {
   "name": "rm-bedrock-bot",
   "version": "1.0.0",
-  "description": "Minecraft Bedrock Bot 24/7",
+  "description": "Minecraft Bedrock Bot for Riyadh",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
