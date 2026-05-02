@@ -1,11 +1,7 @@
 {
-  "name": "rm-bedrock-bot",
+  "name": "rm-bot-new",
   "version": "1.0.0",
-  "description": "Minecraft Bedrock Bot for Riyadh",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
   "dependencies": {
     "bedrock-protocol": "latest"
   }
