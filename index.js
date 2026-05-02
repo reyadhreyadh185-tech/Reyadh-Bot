@@ -13,11 +13,11 @@ const weaponTimes = [3000, 4000, 9000, 5000];
 
 function startBot() {
     const client = bedrock.createClient({
-        host: 'REA1_CRAFT_RM.aternos.me', // العنوان من صورتك
-        port: 64603,                      // المنفذ من صورتك
-        username: 'RM_Bot_HH',
+        host: 'REAL__CRAFT.aternos.me // العنوان من صورتك
+        port: 47495,                      // المنفذ من صورتك
+        username: 'RM_Bot',
         offline: true,                   // للدخول بدون حساب إكس بوكس
-        version: '1.21.0'              // الإصدار من صورتك
+        version: '1.21.131'              // الإصدار من صورتك
     });
 
     client.on('join', () => {
