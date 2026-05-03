@@ -1,94 +1,55 @@
-const http = require('http');
 const mineflayer = require('mineflayer');
+const express = require('express');
+const app = express();
 
-const BOT_HOST = 'xREA1_CRAFT.aternos.me';
-const BOT_PORT = 64603;
-const BOT_USERNAME = 'BOT.RM';
-const jumpTimes = [5000, 3000, 2000, 8000];
-const WEAPON_INTERVAL = 3000;
-
-let botOnline = false;
-let reconnecting = false;
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'ok', bot: botOnline ? 'online' : 'offline' }));
+// نظام نبضات القلب لـ UptimeRobot و Render
+app.get('/', (req, res) => {
+    res.send('<h1>RM_ALGÉRIE Java Bot is Online! 🇩🇿👑</h1>');
 });
 
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-  console.log(`✅ الخادم يعمل على المنفذ ${PORT}`);
-  createBot();
-  setInterval(() => {
-    http.get(`http://localhost:${PORT}/`, (res) => {
-      res.resume();
-      console.log('💓 نبضة داخلية — الخادم حي');
-    }).on('error', () => {});
-  }, 4 * 60 * 1000);
-});
+app.listen(process.env.PORT || 3000);
 
-function scheduleReconnect() {
-  if (reconnecting) return;
-  reconnecting = true;
-  setTimeout(() => {
-    reconnecting = false;
-    createBot();
-  }, 5000);
+const botArgs = {
+    host: 'xREA1_CRAFT.aternos.me', 
+    port: 64603,                      
+    username: 'RM_ALGÉRIE',
+    version: '1.21.1' // متوافق مع نسخة 1.21.11 في Purpur
+};
+
+function initBot() {
+    console.log('--- جاري محاولة الدخول لنظام الجافا (Purpur)... ---');
+    
+    const bot = mineflayer.createBot(botArgs);
+
+    bot.on('spawn', () => {
+        console.log('✅ تم الدخول! بوت الجافا RM_ALGÉRIE نشط الآن.');
+        
+        // نظام حركات عشوائية متطور (تسلل، قفز، دوران)
+        setInterval(() => {
+            const actions = ['jump', 'sneak', 'look'];
+            const randomAction = actions[Math.floor(Math.random() * actions.length)];
+
+            if (randomAction === 'jump') {
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 500);
+            } else if (randomAction === 'sneak') {
+                bot.setControlState('sneak', true);
+                setTimeout(() => bot.setControlState('sneak', false), 1000);
+            } else {
+                bot.look(Math.random() * Math.PI * 2, (Math.random() - 0.5) * Math.PI);
+            }
+        }, 8000);
+    });
+
+    // إعادة المحاولة التلقائية كل 10 ثوانٍ عند الطرد أو الخطأ
+    bot.on('error', (err) => console.log('خطأ:', err.message));
+    bot.on('end', () => {
+        console.log('⚠️ انفصل الاتصال، سأعود بعد 10 ثوانٍ...');
+        setTimeout(initBot, 10000);
+    });
 }
 
-function createBot() {
-  console.log(`جاري الاتصال بـ ${BOT_HOST}:${BOT_PORT} ...`);
-  const bot = mineflayer.createBot({
-    host: BOT_HOST,
-    port: BOT_PORT,
-    username: BOT_USERNAME,
-    auth: 'offline',
-    version: false,
-  });
+// حماية الكود من الانهيار (Status 1)
+process.on('uncaughtException', (err) => console.log('خطأ تم اعتراضه:', err.message));
 
-  bot.on('spawn', () => {
-    botOnline = true;
-    console.log('✅ BOT.RM دخل السيرفر بنجاح!');
-    let jIdx = 0;
-    function jump() {
-      if (!botOnline) return;
-      bot.setControlState('jump', true);
-      setTimeout(() => bot.setControlState('jump', false), 300);
-      const delay = jumpTimes[jIdx];
-      jIdx = (jIdx + 1) % jumpTimes.length;
-      setTimeout(jump, delay);
-    }
-    jump();
-    let slot = 0;
-    const weaponTimer = setInterval(() => {
-      if (!botOnline) { clearInterval(weaponTimer); return; }
-      slot = (slot + 1) % 9;
-      bot.setQuickBarSlot(slot);
-    }, WEAPON_INTERVAL);
-  });
-
-  bot.on('end', () => {
-    botOnline = false;
-    console.log('⚠️ انقطع الاتصال — إعادة المحاولة بعد 5 ثوانٍ...');
-    scheduleReconnect();
-  });
-
-  bot.on('error', (err) => {
-    botOnline = false;
-    if (['ECONNREFUSED','ECONNRESET','ENOTFOUND','ETIMEDOUT'].includes(err.code)) {
-      console.log('🔴 السيرفر مغلق — إعادة المحاولة بعد 5 ثوانٍ...');
-    } else {
-      console.log(`⚠️ خطأ: ${err.message}`);
-    }
-    scheduleReconnect();
-  });
-
-  bot.on('kicked', (reason) => {
-    botOnline = false;
-    let msg;
-    try { msg = typeof reason === 'string' ? reason : JSON.stringify(reason); }
-    catch { msg = String(reason); }
-    console.log(`🚫 طُرد البوت: ${msg}`);
-    scheduleReconnect();
-  });
-                                 }
+initBot();
