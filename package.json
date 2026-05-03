@@ -1,13 +1,12 @@
 {
-  "name": "rm-craft-bot",
+  "name": "rm-algerie-java-bot",
   "version": "1.0.0",
-  "private": true,
-  "type": "commonjs",
   "main": "index.js",
+  "dependencies": {
+    "mineflayer": "latest",
+    "express": "latest"
+  },
   "scripts": {
     "start": "node index.js"
-  },
-  "dependencies": {
-    "mineflayer": "^4.23.0"
   }
 }
