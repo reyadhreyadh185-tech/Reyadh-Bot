@@ -4,7 +4,7 @@ const { generateSpawnCommands } = require('./builder');
 
 const HOST = 'xREA1_CRAFT.aternos.me';
 const PORT = 64603;
-const BOT_NAME = 'SERVER_REYADH';
+const BOT_NAME = 'SERVER_RM';
 const VERSION = false;
 
 const RETRY_DELAY_ONLINE  = 10000;
