@@ -4,8 +4,8 @@ const { generateSpawnCommands } = require('./builder');
 
 const HOST = 'xREA1_CRAFT.aternos.me';
 const PORT = 64603;
-const BOT_NAME = 'REAL_BOT';
-const VERSION = '1.21.1';
+const BOT_NAME = 'MINECRAFT';
+const VERSION = false;
 
 const RETRY_DELAY_ONLINE  = 10000;  // 10s — after normal disconnect
 const RETRY_DELAY_OFFLINE = 30000;  // 30s — when server appears offline
@@ -128,7 +128,7 @@ async function buildSpawn(bot) {
 
 // ── Main bot ──────────────────────────────────────────────────────────────────
 function createBot() {
-  log(`Connecting to ${HOST}:${PORT} as ${BOT_NAME} [${VERSION}]...`);
+  log(`Connecting to ${HOST}:${PORT} as ${BOT_NAME} [auto-version]...`);
 
   let bot;
   try {
