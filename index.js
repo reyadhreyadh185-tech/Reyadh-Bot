@@ -4,34 +4,53 @@ const { generateSpawnCommands } = require('./builder');
 
 const HOST = 'xREA1_CRAFT.aternos.me';
 const PORT = 64603;
-const BOT_NAME = 'MINECRAFT';
+const BOT_NAME = 'SERVER_REYADH';
 const VERSION = false;
 
-const RETRY_DELAY_ONLINE  = 10000;  // 10s — after normal disconnect
-const RETRY_DELAY_OFFLINE = 30000;  // 30s — when server appears offline
-const LOGIN_TIMEOUT       = 15000;  // 15s — if no login packet → server offline
-const SPAWN_TIMEOUT       = 60000;  // 60s — if logged in but no spawn
+const RETRY_DELAY_ONLINE  = 10000;
+const RETRY_DELAY_OFFLINE = 30000;
+const LOGIN_TIMEOUT       = 15000;
+const SPAWN_TIMEOUT       = 60000;
 
 const JUMP_PATTERN = [4000, 6000, 7000, 3000, 2000];
-let jumpIndex = 0;
-let jumpTimeout = null;
-let inventoryInterval = null;
+let jumpIndex       = 0;
+let jumpTimeout     = null;
+let inventoryInterval  = null;
 let loginTimeoutHandle = null;
 let spawnTimeoutHandle = null;
-let retryScheduled = false;
-let currentBot = null;
-let isBuilding = false;
+let retryScheduled  = false;
+let currentBot      = null;
+let isBuilding      = false;
+let silentMode      = false; // !silent toggle
 
-// ── HTTP server for UptimeRobot ───────────────────────────────────────────────
+// ── HTTP server — UptimeRobot + auto-reconnect check ─────────────────────────
 const httpPort = process.env.PORT || 3000;
 http.createServer((req, res) => {
+  const alive = !!(currentBot && currentBot.entity);
   res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('REAL_BOT IS ALIVE');
+  res.end(alive ? 'BOT_ONLINE' : 'BOT_OFFLINE');
+
+  // If bot is not connected, trigger reconnect after 5 seconds
+  if (!alive && !retryScheduled) {
+    log('Ping received — bot offline, reconnecting in 5s...');
+    setTimeout(() => {
+      if (!retryScheduled && !currentBot) {
+        retryScheduled = false;
+        createBot();
+      }
+    }, 5000);
+  }
 }).listen(httpPort, () => log(`HTTP server on port ${httpPort}`));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
+}
+
+function botSay(bot, msg) {
+  if (!silentMode) {
+    try { bot.chat(msg); } catch (_) {}
+  }
 }
 
 function sleep(ms) {
@@ -78,16 +97,13 @@ function startInventoryCycle(bot) {
 function scheduleRetry(reason, delay) {
   stopTimers();
   isBuilding = false;
-
   if (currentBot) {
     try { currentBot.removeAllListeners(); } catch (_) {}
     try { currentBot._client && currentBot._client.end(); } catch (_) {}
     currentBot = null;
   }
-
   if (retryScheduled) return;
   retryScheduled = true;
-
   const wait = delay || RETRY_DELAY_ONLINE;
   log(`${reason} — reconnecting in ${wait / 1000}s...`);
   setTimeout(() => {
@@ -98,7 +114,7 @@ function scheduleRetry(reason, delay) {
 
 // ── Spawn builder ─────────────────────────────────────────────────────────────
 async function buildSpawn(bot) {
-  if (isBuilding) { bot.chat('Building already in progress...'); return; }
+  if (isBuilding) { botSay(bot, 'Already building...'); return; }
   isBuilding = true;
 
   const pos = bot.entity.position;
@@ -106,29 +122,30 @@ async function buildSpawn(bot) {
   const cy = Math.floor(pos.y);
   const cz = Math.floor(pos.z);
 
-  log(`Building spawn at ${cx} ${cy} ${cz}`);
-  bot.chat(`Starting spawn build at ${cx} ${cy} ${cz}...`);
+  log(`Building epic spawn at ${cx} ${cy} ${cz}`);
+  botSay(bot, `Starting EPIC spawn build at ${cx} ${cy} ${cz}...`);
 
   const cmds = generateSpawnCommands(cx, cy, cz);
-  bot.chat(`Placing ${cmds.length} blocks (~${Math.ceil(cmds.length * 0.15 / 60)} min)`);
+  botSay(bot, `Placing ${cmds.length} blocks (~${Math.ceil(cmds.length * 0.15 / 60)} min). Use !silent to hide updates.`);
 
   for (let i = 0; i < cmds.length; i++) {
     if (!currentBot) break;
     try { bot.chat(`/${cmds[i]}`); } catch (_) { break; }
     await sleep(150);
-    if (i > 0 && i % 200 === 0) {
-      bot.chat(`Building... ${Math.floor((i / cmds.length) * 100)}%`);
+    if (i > 0 && i % 300 === 0) {
+      const pct = Math.floor((i / cmds.length) * 100);
+      botSay(bot, `Building... ${pct}% (${i}/${cmds.length})`);
     }
   }
 
   isBuilding = false;
-  if (currentBot) bot.chat('Spawn building complete!');
-  log('Spawn build finished.');
+  if (currentBot) botSay(bot, 'EPIC spawn building COMPLETE!');
+  log('Build finished.');
 }
 
 // ── Main bot ──────────────────────────────────────────────────────────────────
 function createBot() {
-  log(`Connecting to ${HOST}:${PORT} as ${BOT_NAME} [auto-version]...`);
+  log(`Connecting to ${HOST}:${PORT} as ${BOT_NAME}...`);
 
   let bot;
   try {
@@ -142,48 +159,52 @@ function createBot() {
       checkTimeoutInterval: 30000,
     });
   } catch (err) {
-    scheduleRetry(`Failed to create bot: ${err.message}`, RETRY_DELAY_OFFLINE);
+    scheduleRetry(`Failed: ${err.message}`, RETRY_DELAY_OFFLINE);
     return;
   }
 
   currentBot = bot;
 
-  // If no login packet in 15s → server is likely offline
   loginTimeoutHandle = setTimeout(() => {
-    log('No login packet received — server may be offline or starting...');
-    scheduleRetry('Server offline/unreachable', RETRY_DELAY_OFFLINE);
+    log('No login — server may be offline');
+    scheduleRetry('Login timeout', RETRY_DELAY_OFFLINE);
   }, LOGIN_TIMEOUT);
 
   bot.once('login', () => {
     if (loginTimeoutHandle) { clearTimeout(loginTimeoutHandle); loginTimeoutHandle = null; }
-    log('Login received — waiting for spawn...');
-
-    // After login, wait up to 60s for spawn
+    log('Login OK — waiting for spawn...');
     spawnTimeoutHandle = setTimeout(() => {
       scheduleRetry('Spawn timeout (60s)', RETRY_DELAY_ONLINE);
     }, SPAWN_TIMEOUT);
   });
 
   bot.on('messagestr', (msg) => {
-    log(`[MSG] ${msg}`);
+    if (!silentMode) log(`[MSG] ${msg}`);
   });
 
   bot.once('spawn', () => {
     if (spawnTimeoutHandle) { clearTimeout(spawnTimeoutHandle); spawnTimeoutHandle = null; }
-    log('Spawned! Activity loops starting...');
+    log('Spawned! Bot is active.');
     jumpIndex = 0;
     scheduleNextJump(bot);
     startInventoryCycle(bot);
   });
 
   bot.on('chat', (username, message) => {
-    log(`[CHAT] <${username}> ${message}`);
+    if (!silentMode) log(`[CHAT] <${username}> ${message}`);
     const msg = message.trim().toLowerCase();
-    if (msg === '!buildspawn') buildSpawn(bot);
-    if (msg === '!help') bot.chat('Commands: !buildspawn | !pos | !help');
+
+    if (msg === '!buildspawn')  buildSpawn(bot);
+    if (msg === '!silent') {
+      silentMode = !silentMode;
+      bot.chat(`Silent mode: ${silentMode ? 'ON' : 'OFF'}`);
+    }
+    if (msg === '!help') {
+      bot.chat('Commands: !buildspawn | !silent | !pos | !help');
+    }
     if (msg === '!pos') {
       const p = bot.entity.position;
-      bot.chat(`Position: ${Math.floor(p.x)} ${Math.floor(p.y)} ${Math.floor(p.z)}`);
+      bot.chat(`Pos: ${Math.floor(p.x)} ${Math.floor(p.y)} ${Math.floor(p.z)}`);
     }
   });
 
@@ -193,16 +214,11 @@ function createBot() {
     scheduleRetry(`Kicked: ${r}`, RETRY_DELAY_ONLINE);
   });
 
-  bot.on('error', (err) => {
-    scheduleRetry(`Error: ${err.message}`, RETRY_DELAY_OFFLINE);
-  });
-
-  bot.on('end', (reason) => {
-    scheduleRetry(`Ended: ${reason || 'no reason'}`, RETRY_DELAY_ONLINE);
-  });
+  bot.on('error',  (err)    => scheduleRetry(`Error: ${err.message}`, RETRY_DELAY_OFFLINE));
+  bot.on('end',    (reason) => scheduleRetry(`Ended: ${reason || '-'}`, RETRY_DELAY_ONLINE));
 }
 
-process.on('uncaughtException', (err) => log(`Uncaught: ${err.message}`));
-process.on('unhandledRejection', (r) => log(`Rejection: ${r}`));
+process.on('uncaughtException',  (err) => log(`Uncaught: ${err.message}`));
+process.on('unhandledRejection', (r)   => log(`Rejection: ${r}`));
 
 createBot();
