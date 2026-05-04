@@ -131,8 +131,8 @@ async function buildSpawn(bot) {
   for (let i = 0; i < cmds.length; i++) {
     if (!currentBot) break;
     try { bot.chat(`/${cmds[i]}`); } catch (_) { break; }
-    await sleep(150);
-    if (i > 0 && i % 300 === 0) {
+    await sleep(220);
+    if (i > 0 && i % 100 === 0) {
       const pct = Math.floor((i / cmds.length) * 100);
       botSay(bot, `Building... ${pct}% (${i}/${cmds.length})`);
     }
