@@ -1,0 +1,15 @@
+{
+  "name": "real-bot",
+  "version": "1.0.0",
+  "description": "REAL_BOT - Minecraft bot for xREA1_CRAFT Aternos server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "mineflayer": "^4.23.0"
+  }
+}
