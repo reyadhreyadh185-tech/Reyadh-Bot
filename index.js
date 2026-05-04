@@ -30,14 +30,11 @@ http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end(alive ? 'BOT_ONLINE' : 'BOT_OFFLINE');
 
-  // If bot is not connected, trigger reconnect after 5 seconds
-  if (!alive && !retryScheduled) {
-    log('Ping received — bot offline, reconnecting in 5s...');
+  // Only reconnect if there is NO bot instance at all (not just waiting to spawn)
+  if (!currentBot && !retryScheduled) {
+    log('Ping received — no bot instance, reconnecting in 5s...');
     setTimeout(() => {
-      if (!retryScheduled && !currentBot) {
-        retryScheduled = false;
-        createBot();
-      }
+      if (!currentBot && !retryScheduled) createBot();
     }, 5000);
   }
 }).listen(httpPort, () => log(`HTTP server on port ${httpPort}`));
