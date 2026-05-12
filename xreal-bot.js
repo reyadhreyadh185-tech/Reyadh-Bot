@@ -2,7 +2,7 @@ import mineflayer from "mineflayer";
 
 const HOST = process.env.MC_HOST || "xREA1_CRAFT.aternos.me";
 const PORT = parseInt(process.env.MC_PORT || "64603");
-const VERSION = process.env.MC_VERSION || "1.21.1";
+const VERSION = process.env.MC_VERSION || "1.21.11";
 const RECONNECT_MS = 5_000;
 const JUMP_INTERVALS = [1000, 2000, 3000, 4000, 7000, 9000];
 
