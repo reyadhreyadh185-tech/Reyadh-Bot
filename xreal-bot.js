@@ -2,8 +2,7 @@ import mineflayer from "mineflayer";
 
 const HOST = process.env.MC_HOST || "xREA1_CRAFT.aternos.me";
 const PORT = parseInt(process.env.MC_PORT || "64603");
-const VERSION = process.env.MC_VERSION || "1.21.11";
-const RECONNECT_MS = 5_000;
+const RECONNECT_MS = 60_000;
 const JUMP_INTERVALS = [1000, 2000, 3000, 4000, 7000, 9000];
 
 let bot = null;
@@ -86,7 +85,7 @@ function scheduleMovement() {
 
 function scheduleReconnect() {
   if (reconnectTimer) return;
-  console.log(`[xREAL] Reconnecting in ${RECONNECT_MS / 1000}s...`);
+  console.log(`[xREA1] Reconnecting in ${RECONNECT_MS / 1000}s...`);
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     createBot();
@@ -96,10 +95,10 @@ function scheduleReconnect() {
 function createBot() {
   if (isConnecting || bot) return;
   isConnecting = true;
-  console.log("[xREAL] Connecting...");
+  console.log("[xREA1] Connecting...");
 
   const instance = mineflayer.createBot({
-    host: HOST, port: PORT, username: "xREAL", version: VERSION,
+    host: HOST, port: PORT, username: "xREA1",
     hideErrors: false, checkTimeoutInterval: 60_000,
   });
 
@@ -110,24 +109,24 @@ function createBot() {
     const pos = instance.entity.position;
     startX = pos.x;
     startZ = pos.z;
-    console.log("[xREAL] Connected!");
+    console.log("[xREA1] Connected!");
     scheduleMovement();
     scheduleJump();
   });
 
   instance.on("kicked", (r) => {
     if (bot !== instance) return;
-    console.log(`[xREAL] Kicked: ${r}`);
+    console.log(`[xREA1] Kicked: ${r}`);
     stopTimers(); bot = null; isConnecting = false; scheduleReconnect();
   });
   instance.on("error", (e) => {
     if (bot !== instance) return;
-    console.log(`[xREAL] Error: ${e.message}`);
+    console.log(`[xREA1] Error: ${e.message}`);
     stopTimers(); bot = null; isConnecting = false; scheduleReconnect();
   });
   instance.on("end", (r) => {
     if (bot !== instance) return;
-    console.log(`[xREAL] Disconnected: ${r}`);
+    console.log(`[xREA1] Disconnected: ${r}`);
     stopTimers(); bot = null; isConnecting = false; scheduleReconnect();
   });
 }

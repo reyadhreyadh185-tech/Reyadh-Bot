@@ -2,9 +2,8 @@ import mineflayer from "mineflayer";
 
 const HOST = process.env.MC_HOST || "xREA1_CRAFT.aternos.me";
 const PORT = parseInt(process.env.MC_PORT || "64603");
-const VERSION = process.env.MC_VERSION || "1.21.11";
-// builder يعيد الاتصال بعد 20 ثانية لتجنب التصادم مع xREAL
-const RECONNECT_MS = 20_000;
+// builder يعيد الاتصال بعد 90 ثانية لتجنب التصادم مع xREAL وتجنب الحجب
+const RECONNECT_MS = 90_000;
 const TRIGGER = "!lobby";
 
 let bot = null;
@@ -156,7 +155,7 @@ async function buildLobby(b) {
 
 function scheduleReconnect() {
   if (reconnectTimer) return;
-  console.log(`[BUILDER] Reconnecting in ${RECONNECT_MS / 1000}s...`);
+  console.log(`[banaa] Reconnecting in ${RECONNECT_MS / 1000}s...`);
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     createBot();
@@ -166,24 +165,24 @@ function scheduleReconnect() {
 function createBot() {
   if (isConnecting || bot) return;
   isConnecting = true;
-  console.log("[BUILDER] Connecting...");
+  console.log("[banaa] Connecting...");
 
   const instance = mineflayer.createBot({
-    host: HOST, port: PORT, username: "builder", version: VERSION,
+    host: HOST, port: PORT, username: "banaa",
     hideErrors: false, checkTimeoutInterval: 60_000,
   });
   bot = instance;
 
   instance.once("spawn", () => {
     isConnecting = false;
-    console.log("[BUILDER] Connected. Waiting for !lobby command...");
+    console.log("[banaa] Connected. Waiting for !lobby command...");
   });
 
   instance.on("chat", (username, message) => {
-    if (message.trim() === TRIGGER && username !== "builder") {
-      console.log(`[BUILDER] Build triggered by ${username}`);
+    if (message.trim() === TRIGGER && username !== "banaa") {
+      console.log(`[banaa] Build triggered by ${username}`);
       buildLobby(instance).catch(e => {
-        console.error("[BUILDER] Build error:", e.message);
+        console.error("[banaa] Build error:", e.message);
         isBuilding = false;
       });
     }
@@ -192,19 +191,19 @@ function createBot() {
   instance.on("kicked", (r) => {
     if (bot !== instance) return;
     isBuilding = false;
-    console.log(`[BUILDER] Kicked: ${r}`);
+    console.log(`[banaa] Kicked: ${r}`);
     bot = null; isConnecting = false; scheduleReconnect();
   });
   instance.on("error", (e) => {
     if (bot !== instance) return;
     isBuilding = false;
-    console.log(`[BUILDER] Error: ${e.message}`);
+    console.log(`[banaa] Error: ${e.message}`);
     bot = null; isConnecting = false; scheduleReconnect();
   });
   instance.on("end", (r) => {
     if (bot !== instance) return;
     isBuilding = false;
-    console.log(`[BUILDER] Disconnected: ${r}`);
+    console.log(`[banaa] Disconnected: ${r}`);
     bot = null; isConnecting = false; scheduleReconnect();
   });
 }
