@@ -3,7 +3,7 @@ import mineflayer from "mineflayer";
 const HOST = process.env.MC_HOST || "xREA1_CRAFT.aternos.me";
 const PORT = parseInt(process.env.MC_PORT || "64603");
 const VERSION = process.env.MC_VERSION || "1.21.1";
-const RECONNECT_MS = 30_000;
+const RECONNECT_MS = 5_000;
 const JUMP_INTERVALS = [1000, 2000, 3000, 4000, 7000, 9000];
 
 let bot = null;
@@ -42,7 +42,6 @@ function scheduleMovement() {
   movementTimer = setTimeout(async () => {
     if (!bot || startX === null) return;
     try {
-      const pos = bot.entity.position;
       const action = rnd(1, 5);
       switch (action) {
         case 1:
@@ -87,6 +86,7 @@ function scheduleMovement() {
 
 function scheduleReconnect() {
   if (reconnectTimer) return;
+  console.log(`[xREAL] Reconnecting in ${RECONNECT_MS / 1000}s...`);
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     createBot();
@@ -110,7 +110,7 @@ function createBot() {
     const pos = instance.entity.position;
     startX = pos.x;
     startZ = pos.z;
-    console.log("[xREAL] Connected! Starting movement & jump loops...");
+    console.log("[xREAL] Connected!");
     scheduleMovement();
     scheduleJump();
   });
