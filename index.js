@@ -1,73 +1,69 @@
 const mineflayer = require('mineflayer');
 const http = require('http');
 
-// 1. إضافة سيرفر ويب بسيط لإرضاء منصة Render
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot xRM is running!\n');
-});
+// سيرفر الويب للبقاء حياً على بورت 10000 (ضروري لـ Render)
+http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('xRM Bot is Online and Running');
+}).listen(10000);
 
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => {
-    console.log(`📡 سيرفر الويب يعمل على بورت: ${PORT}`);
-});
-
-// 2. إعدادات بوت ماين كرافت
-const botArgs = {
+const options = {
     host: 'xREA1_CRAFT.aternos.me', 
     port: 64603,                    
-    username: 'xRM',                
-    version: false                  
+    username: 'xRM'
 };
 
-let bot;
+function startBot() {
+    console.log("🔍 جاري فحص إصدار السيرفر...");
 
-function createBot() {
-    bot = mineflayer.createBot(botArgs);
+    // فحص السيرفر قبل الدخول لجلب الإصدار وضمان عدم حدوث Timeout
+    mineflayer.ping(options, (err, status) => {
+        if (err) {
+            console.log("❌ السيرفر مغلق أو غير مستجيب، سأحاول مجدداً بعد 20 ثانية...");
+            setTimeout(startBot, 20000);
+            return;
+        }
 
-    bot.on('spawn', () => {
-        console.log(`✅ xRM دخل السيرفر بنجاح!`);
-        console.log(`🎮 الإصدار المكتشف: ${bot.version}`);
+        const version = status.version.name;
+        console.log(`✅ تم اكتشاف الإصدار: ${version}`);
+
+        const bot = mineflayer.createBot({
+            ...options,
+            version: version // استخدام الإصدار الذي اكتشفه الـ Ping
+        });
+
+        bot.on('spawn', () => {
+            console.log(`🚀 xRM دخل السيرفر بنجاح!`);
+            handleMovement(bot);
+        });
+
+        bot.on('error', (err) => console.log('⚠️ خطأ:', err.message));
         
-        startMoving(); 
-        startRandomJumping(); 
-    });
-
-    // نظام الحركة (10 بلوكات تقريباً في كل اتجاه)
-    async function startMoving() {
-        const directions = ['forward', 'back', 'left', 'right'];
-        while (true) {
-            for (let dir of directions) {
-                if (!bot.entity) break;
-                bot.setControlState(dir, true);
-                await bot.waitForTicks(40); // 40 Ticks تساوي ثانيتين من المشي
-                bot.setControlState(dir, false);
-                await bot.waitForTicks(10); 
-            }
-        }
-    }
-
-    // نظام القفز العشوائي جداً
-    async function startRandomJumping() {
-        while (true) {
-            if (!bot.entity) break;
-            bot.setControlState('jump', true);
-            bot.setControlState('jump', false);
-            
-            // وقت انتظار عشوائي بين ثانية و 10 ثوانٍ لتمويه نظام الحماية
-            const randomWait = Math.floor(Math.random() * 10000) + 1000;
-            await new Promise(res => setTimeout(res, randomWait));
-        }
-    }
-
-    bot.on('error', (err) => {
-        console.log('❌ خطأ في الاتصال:', err.message);
-    });
-
-    bot.on('end', () => {
-        console.log('⚠️ البوت فصل، سأحاول العودة بعد 10 ثوانٍ...');
-        setTimeout(createBot, 10000);
+        bot.on('end', () => {
+            console.log('⚠️ انفصل الاتصال، جاري إعادة المحاولة...');
+            setTimeout(startBot, 10000);
+        });
     });
 }
 
-createBot();
+async function handleMovement(bot) {
+    const directions = ['forward', 'back', 'left', 'right'];
+    while (bot && bot.entity) {
+        // اختيار اتجاه عشوائي
+        const dir = directions[Math.floor(Math.random() * directions.length)];
+        
+        bot.setControlState(dir, true);
+        await new Promise(r => setTimeout(r, 2500)); // مشي لمسافة 10 بلوكات تقريباً
+        bot.setControlState(dir, false);
+
+        // قفز في أوقات عشوائية جداً
+        if (Math.random() > 0.4) {
+            bot.setControlState('jump', true);
+            bot.setControlState('jump', false);
+        }
+
+        await new Promise(r => setTimeout(r, Math.random() * 8000 + 2000));
+    }
+}
+
+startBot();
