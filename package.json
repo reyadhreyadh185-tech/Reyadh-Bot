@@ -1,12 +1,12 @@
 {
-  "name": "minecraft-bot",
+  "name": "xrealx-bot",
   "version": "1.0.0",
-  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "mineflayer": "latest",
+    "express": "latest"
+  },
   "scripts": {
     "start": "node index.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "mineflayer": "^4.14.0"
   }
 }
