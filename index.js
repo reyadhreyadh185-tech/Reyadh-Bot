@@ -8,8 +8,8 @@ http.createServer((req, res) => {
 }).listen(10000);
 
 const options = {
-    host: 'xREA1_CRAFT.aternos.me',
-    port: 64603,
+    host: 'REA1_CRAFT.aternos.me',
+    port: 18542,
     username: 'RMx', // الاسم الجديد كما طلبت
     version: "1.21.1", // تحديد يدوي لتقليل وقت "الفحص" الذي يسبب التايم أوت
     connectTimeout: 60000, // زيادة وقت الانتظار لدقيقة كاملة
