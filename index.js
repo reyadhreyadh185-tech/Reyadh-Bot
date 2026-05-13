@@ -1,43 +1,58 @@
 const mineflayer = require('mineflayer');
 const http = require('http');
 
-// تشغيل سيرفر الويب فوراً لإبقاء الخدمة خضراء
-http.createServer((req, res) => { res.end('xRM Bot is Running'); }).listen(10000);
+// سيرفر الويب - لبقاء Uptime Robot باللون الأخضر
+http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('RMx Bot is Online');
+}).listen(10000);
 
-// بيانات السيرفر كما أكدت لي
-const botOptions = {
+const options = {
     host: 'xREA1_CRAFT.aternos.me',
     port: 64603,
-    username: 'RMx',
-    version: false, // جرب وضع هذا الإصدار يدوياً لتجنب عملية الفحص (Ping) التي تفشل
-    hideErrors: true   // إخفاء الأخطاء غير الضرورية لتقليل استهلاك الرام
+    username: 'RMx', // الاسم الجديد كما طلبت
+    version: "1.21.1", // تحديد يدوي لتقليل وقت "الفحص" الذي يسبب التايم أوت
+    connectTimeout: 60000, // زيادة وقت الانتظار لدقيقة كاملة
+    checkTimeoutInterval: 60000
 };
 
 let bot;
 
 function createBot() {
-    console.log(`🚀 محاولة دخول مباشرة لـ ${botOptions.host}...`);
+    console.log(`📡 جاري محاولة إدخال البوت ${options.username}...`);
     
-    // تنظيف أي محاولة سابقة
     if (bot) bot.removeAllListeners();
 
-    bot = mineflayer.createBot(botOptions);
+    bot = mineflayer.createBot(options);
 
     bot.on('spawn', () => {
-        console.log("✅ أخيراً! البوت دخل السيرفر الآن.");
-        // حركة بسيطة للبقاء نشطاً
-        setInterval(() => {
-            if (bot.entity) bot.setControlState('jump', true);
-            setTimeout(() => { if (bot.entity) bot.setControlState('jump', false); }, 500);
-        }, 15000);
+        console.log(`✅ [${options.username}] دخل السيرفر الآن!`);
+        startRandomMovement();
     });
 
+    async function startRandomMovement() {
+        const dirs = ['forward', 'back', 'left', 'right'];
+        while (bot && bot.entity) {
+            let dir = dirs[Math.floor(Math.random() * dirs.length)];
+            bot.setControlState(dir, true);
+            await new Promise(r => setTimeout(r, 2000));
+            bot.setControlState(dir, false);
+            
+            // قفزة عشوائية
+            bot.setControlState('jump', true);
+            bot.setControlState('jump', false);
+            
+            await new Promise(r => setTimeout(r, 10000));
+        }
+    }
+
     bot.on('error', (err) => {
-        console.log('⚠️ لم يستجب السيرفر، سأحاول مجدداً تلقائياً...');
+        console.log('⚠️ خطأ في الاتصال: السيرفر قد يكون محمي أو مغلق.');
     });
 
     bot.on('end', () => {
-        setTimeout(createBot, 10000); // إعادة محاولة كل 10 ثوانٍ
+        console.log('🔄 إعادة محاولة الدخول بعد 15 ثانية...');
+        setTimeout(createBot, 15000);
     });
 }
 
