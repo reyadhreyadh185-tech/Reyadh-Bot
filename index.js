@@ -1,11 +1,23 @@
 const mineflayer = require('mineflayer');
+const http = require('http');
 
-// إعدادات البوت بناءً على بيانات أترنوس الخاصة بك
+// 1. إضافة سيرفر ويب بسيط لإرضاء منصة Render
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot xRM is running!\n');
+});
+
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+    console.log(`📡 سيرفر الويب يعمل على بورت: ${PORT}`);
+});
+
+// 2. إعدادات بوت ماين كرافت
 const botArgs = {
-    host: 'xREA1_CRAFT.aternos.me', // عنوان السيرفر من صورتك
-    port: 64603,                    // البورت من صورتك
-    username: 'xRM',                // الاسم المطلوب
-    version: false                  // تحديد الإصدار تلقائياً
+    host: 'xREA1_CRAFT.aternos.me', 
+    port: 64603,                    
+    username: 'xRM',                
+    version: false                  
 };
 
 let bot;
@@ -26,6 +38,7 @@ function createBot() {
         const directions = ['forward', 'back', 'left', 'right'];
         while (true) {
             for (let dir of directions) {
+                if (!bot.entity) break;
                 bot.setControlState(dir, true);
                 await bot.waitForTicks(40); // 40 Ticks تساوي ثانيتين من المشي
                 bot.setControlState(dir, false);
@@ -37,10 +50,11 @@ function createBot() {
     // نظام القفز العشوائي جداً
     async function startRandomJumping() {
         while (true) {
+            if (!bot.entity) break;
             bot.setControlState('jump', true);
             bot.setControlState('jump', false);
             
-            // وقت انتظار عشوائي بين ثانية و 10 ثوانٍ
+            // وقت انتظار عشوائي بين ثانية و 10 ثوانٍ لتمويه نظام الحماية
             const randomWait = Math.floor(Math.random() * 10000) + 1000;
             await new Promise(res => setTimeout(res, randomWait));
         }
@@ -51,8 +65,8 @@ function createBot() {
     });
 
     bot.on('end', () => {
-        console.log('⚠️ البوت فصل، سأحاول العودة بعد قليل...');
-        setTimeout(createBot, 10000); // محاولة إعادة الاتصال كل 10 ثوانٍ
+        console.log('⚠️ البوت فصل، سأحاول العودة بعد 10 ثوانٍ...');
+        setTimeout(createBot, 10000);
     });
 }
 
