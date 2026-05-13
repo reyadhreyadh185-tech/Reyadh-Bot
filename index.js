@@ -1,26 +1,63 @@
-import express from "express";
-import { startXrealBot } from "./xreal-bot.js";
-import { startBuilderBot } from "./builder-bot.js";
-
+const mineflayer = require('mineflayer');
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.get("/", (req, res) => res.send("✅ Bots are running!"));
-app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
+// 1. نظام إبقاء البوت حياً في ريندر (Express Server)
+app.get('/', (req, res) => res.send('xREALx Bot is Running! 🇩🇿👑'));
+app.listen(process.env.PORT || 3000, () => console.log('--- نظام الحماية من النوم نشط ---'));
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+const botOptions = {
+    host: 'xREA1_CRAFT.aternos.me', 
+    port: 64603,                      
+    username: 'xREALx',
+    version: '1.21.1' // متوافق مع نسخة Purpur 1.21.11 الظاهرة في الصورة
+};
 
-  // xREAL يتصل أولاً
-  startXrealBot();
+function createBot() {
+    const bot = mineflayer.createBot(botOptions);
 
-  // builder يتصل بعد 20 ثانية لتجنب الطرد المتبادل
-  setTimeout(() => startBuilderBot(), 20_000);
+    bot.on('spawn', () => {
+        console.log('✅ تم الدخول بنجاح! البوت xREALx متصل الآن.');
+        
+        // نظام الحركة: قفز ومشي بقطر 10 بلوكات تقريباً
+        setInterval(() => {
+            if (!bot.entity) return;
 
-  // السيرفر يزور نفسه كل دقيقة
-  setInterval(() => {
-    fetch(`http://localhost:${PORT}/health`)
-      .then(() => console.log("[SELF-PING] ok"))
-      .catch(e => console.log("[SELF-PING] failed:", e.message));
-  }, 60_000);
-});
+            const action = Math.random();
+            
+            if (action < 0.3) { 
+                // قفز عشوائي
+                bot.setControlState('jump', true);
+                setTimeout(() => bot.setControlState('jump', false), 500);
+            } else {
+                // مشي عشوائي (تغيير الاتجاه والمشي لمسافة بسيطة)
+                const yaw = Math.random() * Math.PI * 2;
+                bot.look(yaw, 0);
+                bot.setControlState('forward', true);
+                
+                // المشي لمدة ثانيتين (حوالي 8-10 بلوكات) ثم التوقف
+                setTimeout(() => {
+                    bot.setControlState('forward', false);
+                }, 2000);
+            }
+        }, 5000); // تكرار المحاولة كل 5 ثوانٍ
+    });
+
+    // 2. إعادة المحاولة كل 5 ثوانٍ عند انقطاع الاتصال
+    bot.on('end', (reason) => {
+        console.log(`⚠️ انفصل الاتصال (السبب: ${reason}). سأحاول العودة بعد 5 ثوانٍ...`);
+        setTimeout(createBot, 5000);
+    });
+
+    // 3. معالجة الأخطاء لمنع انهيار الخدمة في ريندر
+    bot.on('error', (err) => {
+        console.log('❌ خطأ في الاتصال:', err.message);
+        // إذا كان السيرفر مغلقاً، ينتظر قليلاً قبل المحاولة مجدداً
+        setTimeout(createBot, 10000); 
+    });
+}
+
+// منع توقف الكود نهائياً عند حدوث خطأ غير متوقع
+process.on('uncaughtException', (err) => console.log('🛡️ تم منع انهيار الكود:', err.message));
+
+createBot();
