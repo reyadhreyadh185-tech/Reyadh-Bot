@@ -1,12 +1,16 @@
 {
-  "name": "xrealx-bot",
+  "name": "rmx-bot",
   "version": "1.0.0",
+  "description": "Minecraft bot for Aternos using Mineflayer",
   "main": "index.js",
-  "dependencies": {
-    "mineflayer": "latest",
-    "express": "latest"
-  },
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.22.0",
+    "minecraft-protocol": "^1.47.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
