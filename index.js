@@ -1,52 +1,43 @@
 const mineflayer = require('mineflayer');
 const http = require('http');
 
-// سيرفر الويب - لضمان بقاء Uptime Robot أخضر 🟢
-http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('xRM Bot Status: Active');
-}).listen(10000);
+// تشغيل سيرفر الويب فوراً لإبقاء الخدمة خضراء
+http.createServer((req, res) => { res.end('xRM Bot is Running'); }).listen(10000);
 
-const connectionInfo = {
+// بيانات السيرفر كما أكدت لي
+const botOptions = {
     host: 'xREA1_CRAFT.aternos.me',
-    port: 64603, // تأكد من مطابقة هذا الرقم لما يظهر في صفحة أترنوس الآن!
-    username: 'xRM',
-    version: false,
-    connectTimeout: 45000 // زيادة وقت الانتظار لـ 45 ثانية
+    port: 64603,
+    username: 'RMx',
+    version: false, // جرب وضع هذا الإصدار يدوياً لتجنب عملية الفحص (Ping) التي تفشل
+    hideErrors: true   // إخفاء الأخطاء غير الضرورية لتقليل استهلاك الرام
 };
 
 let bot;
 
 function createBot() {
-    // إذا كان هناك محاولة قديمة معلقة، نقوم بإنهائها
-    if (bot) {
-        bot.quit();
-        bot.removeAllListeners();
-    }
-
-    console.log(`🔍 محاولة اتصال جديدة بـ ${connectionInfo.host}:${connectionInfo.port}...`);
+    console.log(`🚀 محاولة دخول مباشرة لـ ${botOptions.host}...`);
     
-    bot = mineflayer.createBot(connectionInfo);
+    // تنظيف أي محاولة سابقة
+    if (bot) bot.removeAllListeners();
+
+    bot = mineflayer.createBot(botOptions);
 
     bot.on('spawn', () => {
-        console.log(`✅ دخل xRM بنجاح! السيرفر يعمل الآن.`);
-        // منع الخروج بسبب الخمول
+        console.log("✅ أخيراً! البوت دخل السيرفر الآن.");
+        // حركة بسيطة للبقاء نشطاً
         setInterval(() => {
-            if (bot.entity) {
-                bot.setControlState('jump', true);
-                bot.setControlState('jump', false);
-            }
-        }, 30000); 
+            if (bot.entity) bot.setControlState('jump', true);
+            setTimeout(() => { if (bot.entity) bot.setControlState('jump', false); }, 500);
+        }, 15000);
     });
 
-    // التعامل مع الأخطاء بدون توقف البرنامج
     bot.on('error', (err) => {
-        console.log('⚠️ لم أستطع الاتصال بالسيرفر. تأكد أنه Online.');
+        console.log('⚠️ لم يستجب السيرفر، سأحاول مجدداً تلقائياً...');
     });
 
     bot.on('end', () => {
-        console.log('🔄 محاولة إعادة الاتصال خلال 20 ثانية...');
-        setTimeout(createBot, 20000);
+        setTimeout(createBot, 10000); // إعادة محاولة كل 10 ثوانٍ
     });
 }
 
