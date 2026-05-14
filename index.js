@@ -1,74 +1,84 @@
 const mineflayer = require('mineflayer');
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const http = require('http');
 
-// 1. تشغيل سيرفر الويب فوراً لضمان اللون الأخضر (مستقل عن البوت)
+// إنشاء سيرفر الويب لضمان بقاء البوت حياً (Uptime)
 http.createServer((req, res) => {
-    res.end('RMx Status: Stealth Mode Active');
-}).listen(10000, () => {
-    console.log("🟢 أوبتايم روبوت أخضر.. سيرفر الويب يعمل!");
-});
+    res.writeHead(200);
+    res.end('Bot REAL is Online and Exploring');
+}).listen(10000);
 
 const botOptions = {
     host: 'xREA1_CRAFT.aternos.me',
     port: 64603,
-    username: 'RMx',
-    version: false, // سيكتشف الإصدار تلقائياً
-    connectTimeout: 120000,
-    keepAlive: true,
-    hideErrors: false
+    username: 'REAL', // تغيير الاسم إلى REAL بحروف كبيرة كما طلبت
+    version: false,   // تحديد الإصدار تلقائياً من قبل البوت
+    connectTimeout: 120000
 };
 
 let bot;
+let spawnPos = null;
 
 function createBot() {
-    // توقيت عشوائي لإعادة المحاولة (بين 30 إلى 60 ثانية) لتضليل نظام الحماية
-    const retryDelay = Math.floor(Math.random() * 30000) + 30000;
-    
-    console.log(`📡 [${new Date().toLocaleTimeString()}] محاولة "تسلل" جديدة لـ RMx...`);
+    console.log("📡 [REAL] جاري محاولة الدخول واكتشاف الإصدار تلقائياً...");
     
     if (bot) bot.removeAllListeners();
-
     bot = mineflayer.createBot(botOptions);
 
-    bot.once('inject_allowed', () => {
-        console.log("🛠 تم اختراق الجدار الأولي.. جاري التعرف على الإصدار...");
-    });
+    // تحميل إضافات الحركة والمسارات
+    bot.loadPlugin(pathfinder);
 
     bot.on('spawn', () => {
-        console.log(`✅ دخل RMx بنجاح! الإصدار الذي اكتشفه البوت: ${bot.version}`);
-        startHumanBehavior();
+        console.log(`✅ [REAL] دخل السيرفر! الإصدار المكتشف: ${bot.version}`);
+        
+        // تثبيت نقطة السبون عند أول دخول للتحرك حولها
+        if (!spawnPos) spawnPos = bot.entity.position.clone();
+
+        const movements = new Movements(bot);
+        bot.pathfinder.setMovements(movements);
+        
+        // بدء الحلقة الرئيسية للمشي وفتح الصناديق
+        mainLoop();
     });
 
-    async function startHumanBehavior() {
+    async function mainLoop() {
         while (bot && bot.entity) {
             try {
-                // محاكاة حركة الرأس البشرية
-                await bot.look(Math.random() * 6.2, (Math.random() - 0.5) * 1.5);
-                
-                // قفزة عشوائية كل فترة
-                if (Math.random() > 0.75) {
-                    bot.setControlState('jump', true);
-                    await new Promise(r => setTimeout(r, 400));
-                    bot.setControlState('jump', false);
-                }
+                // 1. البحث عن صندوق قريب لفتحه
+                const chestBlock = bot.findBlock({
+                    matching: (block) => ['chest', 'trapped_chest', 'barrel'].includes(block.name),
+                    maxDistance: 4
+                });
 
-                // انتظار طويل وغير منتظم (كأن اللاعب يتحدث أو يفتح القوائم)
-                await new Promise(r => setTimeout(r, Math.random() * 20000 + 20000));
-            } catch (e) { break; }
+                if (chestBlock) {
+                    console.log("📦 وجد [REAL] صندوقاً! جاري التوجه لفتحه...");
+                    await bot.pathfinder.goto(new goals.GoalBlock(chestBlock.position.x, chestBlock.position.y, chestBlock.position.z));
+                    const chest = await bot.openChest(chestBlock);
+                    await new Promise(r => setTimeout(r, 3000)); // يبقى الصندوق مفتوحاً لـ 3 ثوانٍ
+                    chest.close();
+                    console.log("✅ تم فحص الصندوق بنجاح.");
+                } else {
+                    // 2. التحرك عشوائياً ضمن نطاق 10 بلكات من نقطة البداية
+                    const rx = Math.floor(Math.random() * 21) - 10;
+                    const rz = Math.floor(Math.random() * 21) - 10;
+                    const targetPos = spawnPos.offset(rx, 0, rz);
+
+                    console.log(`🏃 تجول عشوائي ضمن 10 بلكات إلى: ${Math.round(targetPos.x)}, ${Math.round(targetPos.z)}`);
+                    await bot.pathfinder.goto(new goals.GoalNear(targetPos.x, targetPos.y, targetPos.z, 1));
+                }
+            } catch (err) {
+                // تجاهل أخطاء الطريق البسيطة
+            }
+            // انتظار 5 ثوانٍ قبل المهمة التالية
+            await new Promise(r => setTimeout(r, 5000));
         }
     }
 
-    bot.on('error', (err) => {
-        if (err.code === 'ETIMEDOUT') {
-            console.log("🚫 أترنوس يرفض الاتصال (IP Blocked). سأغير توقيت المحاولة...");
-        } else {
-            console.log(`⚠️ خطأ: ${err.message}`);
-        }
-    });
-
+    bot.on('error', (err) => console.log('⚠️ خطأ اتصال:', err.message));
+    
     bot.on('end', () => {
-        console.log(`🔄 سأختفي لـ ${retryDelay/1000} ثانية ثم أحاول مجدداً...`);
-        setTimeout(createBot, retryDelay);
+        console.log('🔄 انفصل [REAL]، سيتم إعادة المحاولة بعد 20 ثانية...');
+        setTimeout(createBot, 20000);
     });
 }
 
