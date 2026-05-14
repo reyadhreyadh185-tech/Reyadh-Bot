@@ -13,7 +13,7 @@ const botOptions = {
     host: 'xREA1_CRAFT.aternos.me',
     port: 64603,
     username: 'RMx',
-    version: "1.21.11", // الإصدار من صورتك الأخيرة
+    version: false, // الإصدار من صورتك الأخيرة
     connectTimeout: 90000
 };
 
