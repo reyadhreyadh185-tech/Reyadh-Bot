@@ -1,16 +1,15 @@
 {
-  "name": "rmx-bot",
-  "version": "2.0.0",
-  "description": "Advanced Minecraft Bot",
+  "name": "real-bot",
+  "version": "1.0.0",
+  "description": "Minecraft Bot REAL with Auto-version and Pathfinder",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "mineflayer": "^4.22.0",
+    "mineflayer-pathfinder": "^2.4.0",
     "minecraft-protocol": "^1.47.0",
-    "prismarine-viewer": "^1.27.0",
-    "prismarine-entity": "^2.3.0",
     "vec3": "^0.1.10"
   },
   "engines": {
