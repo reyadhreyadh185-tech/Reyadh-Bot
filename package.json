@@ -1,7 +1,7 @@
 {
   "name": "real-bot",
   "version": "1.0.0",
-  "description": "Minecraft Bot REAL with Auto-version and Pathfinder",
+  "description": "Minecraft Bot REAL with Auto-Proxy and Pathfinder",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,6 +10,7 @@
     "mineflayer": "^4.22.0",
     "mineflayer-pathfinder": "^2.4.0",
     "minecraft-protocol": "^1.47.0",
+    "socks-proxy-agent": "^8.0.0",
     "vec3": "^0.1.10"
   },
   "engines": {
