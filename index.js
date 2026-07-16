@@ -5,8 +5,8 @@ const https = require('https');
 
 const ATERNOS_HOST = 'REA1CRAFT.aternos.me';
 const ATERNOS_PORT = 48581;
-// حددنا الإصدار المتوافق مع سيرفرك بالضبط هنا لتفادي outdated_server
-const MINECRAFT_VERSION = '1.26.23'; 
+// غيرناه لـ 1.26.20 لأنها النسخة المدعومة رسمياً في مكتبة البوت ومتوافقة تماماً مع سيرفرك
+const MINECRAFT_VERSION = '1.26.20'; 
 
 // 1. خادم الويب الأساسي لمنصة Render
 const server = http.createServer((req, res) => {
@@ -91,7 +91,7 @@ async function startBot() {
                 username: 'BuilderBot',
                 offline: true,
                 skipPing: true,
-                version: MINECRAFT_VERSION, // فرض الإصدار المطابق للسيرفر
+                version: MINECRAFT_VERSION, // الإصدار الصحيح والمدعوم
                 socket: info.socket 
             });
 
