@@ -1,0 +1,12 @@
+{
+  "name": "rea1craft-bot",
+  "version": "1.0.0",
+  "description": "Minecraft Bedrock Bot on Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bedrock-protocol": "^3.30.0"
+  }
+}
