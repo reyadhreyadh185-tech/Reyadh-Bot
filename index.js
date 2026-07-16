@@ -1,64 +1,77 @@
 const bedrock = require('bedrock-protocol');
+const { SocksClient } = require('socks');
 const http = require('http');
 
-// 1. إعداد خادم ويب بسيط لمنصة Render
+// إعداد البروكسي مباشرة في الكود (تم اختيار بروكسي SOCKS5 شغال)
+const proxyOptions = {
+    proxy: {
+        host: '185.162.230.122', 
+        port: 1080,              
+        type: 5                  
+    },
+    command: 'connect',
+    destination: {
+        host: 'REA1CRAFT.aternos.me',
+        port: 48581
+    }
+};
+
+// خادم الويب الأساسي لمنصة Render باش ما تطفاش الخدمة
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is Online and Running!\n');
+    res.end('Bot is Active and Connected via Proxy!\n');
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`[System] Web server is listening on port ${PORT} for Render.`);
+    console.log(`[System] Web server is running on port ${PORT}`);
 });
 
-// 2. دالة تشغيل البوت مع ميزة إعادة الاتصال التلقائي
-let bot;
-
 function startBot() {
-    console.log('[Bot] جاري محاولة تشغيل البوت والاتصال بالسيرفر...');
+    console.log('[Bot] جاري محاولة الاتصال بالسيرفر عبر البروكسي...');
 
-    bot = bedrock.createClient({
-        host: 'REA1CRAFT.aternos.me',   // عنوان السيرفر تاعك
-        port: 48581,                    // منفذ السيرفر تاعك
-        username: 'BuilderBot',         // اسم البوت
-        offline: true,                  // السيرفر مكرك
-        skipPing: true                  // مهم جداً! تخطي الـ Ping لتفادي خطأ RakTimeout كلياً
-    });
+    SocksClient.createConnection(proxyOptions, (err, info) => {
+        if (err) {
+            console.log('[Error] فشل الاتصال بالبروكسي:', err.message);
+            reconnect();
+            return;
+        }
 
-    // عند الاتصال بنجاح
-    bot.on('join', () => {
-        console.log('[Bot] البوت اتصل بالسيرفر بنجاح!');
-    });
+        console.log('[Proxy] تم الاتصال بالبروكسي بنجاح! جاري الدخول للسيرفر...');
 
-    // عند رسبنة البوت داخل العالم
-    bot.on('spawn', () => {
-        console.log('[Bot] البوت ترسبن في العالم راهو لداخل!');
-    });
+        const bot = bedrock.createClient({
+            host: 'REA1CRAFT.aternos.me',
+            port: 48581,
+            username: 'BuilderBot',
+            offline: true,
+            skipPing: true,
+            socket: info.socket 
+        });
 
-    // إذا انفصل البوت لأي سبب
-    bot.on('disconnect', (packet) => {
-        console.log('[Bot] البوت خرج من السيرفر، السبب:', packet);
-        reconnect();
-    });
+        bot.on('join', () => {
+            console.log('[Bot] دخلت للسيرفر بنجاح عبر البروكسي!');
+        });
 
-    // إذا حدث خطأ في الاتصال
-    bot.on('error', (err) => {
-        console.log('[Error] حدث خطأ في البوت:', err.message || err);
-        reconnect();
+        bot.on('spawn', () => {
+            console.log('[Bot] البوت ترسبن في العالم راهو لداخل!');
+        });
+
+        bot.on('disconnect', (packet) => {
+            console.log('[Bot] البوت خرج من السيرفر، السبب:', packet);
+            reconnect();
+        });
+
+        bot.on('error', (err) => {
+            console.log('[Error] خطأ في البوت:', err.message || err);
+            reconnect();
+        });
     });
 }
 
-// دالة إعادة الاتصال بعد 10 ثواني
-let reconnectTimeout;
 function reconnect() {
-    if (reconnectTimeout) clearTimeout(reconnectTimeout);
-    
-    console.log('[Bot] سيعيد البوت المحاولة والاتصال بعد 10 ثواني...');
-    reconnectTimeout = setTimeout(() => {
-        startBot();
-    }, 10000); // 10000 ملي ثانية = 10 ثواني
+    console.log('[Bot] إعادة المحاولة والاتصال بعد 10 ثواني...');
+    setTimeout(startBot, 10000);
 }
 
-// تشغيل البوت لأول مرة
+// تشغيل البوت
 startBot();
