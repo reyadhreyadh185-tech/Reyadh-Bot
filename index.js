@@ -1,7 +1,7 @@
 const bedrock = require('bedrock-protocol');
 const http = require('http');
 
-// 1. إعداد خادم ويب بسيط باش منصة Render ما تحبسش البوت وتعتبرو شغال
+// 1. إعداد خادم ويب بسيط لمنصة Render
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is Online and Running!\n');
@@ -12,29 +12,53 @@ server.listen(PORT, () => {
     console.log(`[System] Web server is listening on port ${PORT} for Render.`);
 });
 
-// 2. إعداد بوت ماينكرافت بدروك (حسب معلومات سيرفرك)
-console.log('[Bot] Starting Minecraft Bedrock Bot...');
+// 2. دالة تشغيل البوت مع ميزة إعادة الاتصال التلقائي
+let bot;
 
-const client = bedrock.createClient({
-  host: 'REA1CRAFT.aternos.me',   // عنوان السيرفر تاعك
-  port: 48581,                    // منفذ السيرفر تاعك
-  username: 'BuilderBot',         // اسم البوت داخل اللعبة (تقدر تبدلو)
-  offline: true                   // مهم جداً! بما أن سيرفرك مكرك (Online Mode: False)
-});
+function startBot() {
+    console.log('[Bot] جاري محاولة تشغيل البوت والاتصال بالسيرفر...');
 
-// أحداث البوت (باش تشوف في منصة Render واش راه يصرى)
-client.on('join', () => {
-  console.log('[Bot] البوت اتصل بالسيرفر بنجاح!');
-});
+    bot = bedrock.createClient({
+        host: 'REA1CRAFT.aternos.me',   // عنوان السيرفر تاعك
+        port: 48581,                    // منفذ السيرفر تاعك
+        username: 'BuilderBot',         // اسم البوت
+        offline: true,                  // السيرفر مكرك
+        skipPing: true                  // مهم جداً! تخطي الـ Ping لتفادي خطأ RakTimeout كلياً
+    });
 
-client.on('spawn', () => {
-  console.log('[Bot] البوت ترسبن في العالم راهو لداخل!');
-});
+    // عند الاتصال بنجاح
+    bot.on('join', () => {
+        console.log('[Bot] البوت اتصل بالسيرفر بنجاح!');
+    });
 
-client.on('disconnect', (packet) => {
-  console.log('[Bot] البوت خرج من السيرفر، السبب:', packet);
-});
+    // عند رسبنة البوت داخل العالم
+    bot.on('spawn', () => {
+        console.log('[Bot] البوت ترسبن في العالم راهو لداخل!');
+    });
 
-client.on('error', (err) => {
-  console.log('[Error] حدث خطأ:', err);
-});
+    // إذا انفصل البوت لأي سبب
+    bot.on('disconnect', (packet) => {
+        console.log('[Bot] البوت خرج من السيرفر، السبب:', packet);
+        reconnect();
+    });
+
+    // إذا حدث خطأ في الاتصال
+    bot.on('error', (err) => {
+        console.log('[Error] حدث خطأ في البوت:', err.message || err);
+        reconnect();
+    });
+}
+
+// دالة إعادة الاتصال بعد 10 ثواني
+let reconnectTimeout;
+function reconnect() {
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    
+    console.log('[Bot] سيعيد البوت المحاولة والاتصال بعد 10 ثواني...');
+    reconnectTimeout = setTimeout(() => {
+        startBot();
+    }, 10000); // 10000 ملي ثانية = 10 ثواني
+}
+
+// تشغيل البوت لأول مرة
+startBot();
