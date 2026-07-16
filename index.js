@@ -1,10 +1,12 @@
 const bedrock = require('bedrock-protocol');
 const { SocksClient } = require('socks');
 const http = require('http');
-const https = require('https'); // مكتبة مدمجة لجلب البروكسيات
+const https = require('https');
 
 const ATERNOS_HOST = 'REA1CRAFT.aternos.me';
 const ATERNOS_PORT = 48581;
+// حددنا الإصدار المتوافق مع سيرفرك بالضبط هنا لتفادي outdated_server
+const MINECRAFT_VERSION = '1.26.23'; 
 
 // 1. خادم الويب الأساسي لمنصة Render
 const server = http.createServer((req, res) => {
@@ -17,7 +19,7 @@ server.listen(PORT, () => {
     console.log(`[System] Web server is running on port ${PORT}`);
 });
 
-// 2. دالة جلب البروكسيات تلقائياً من API مجاني
+// 2. دالة جلب البروكسيات تلقائياً
 function fetchProxies() {
     return new Promise((resolve, reject) => {
         console.log('[System] جاري جلب قائمة البروكسيات تلقائياً...');
@@ -40,7 +42,7 @@ function fetchProxies() {
     });
 }
 
-// 3. دالة تشغيل البوت وتجربة البروكسيات
+// 3. دالة تشغيل البوت
 async function startBot() {
     let proxies = [];
     try {
@@ -53,7 +55,6 @@ async function startBot() {
         return;
     }
 
-    // تجربة البروكسيات واحد تلو الآخر حتى ينجح أحدها
     for (let i = 0; i < proxies.length; i++) {
         const [ip, portStr] = proxies[i].split(':');
         const port = parseInt(portStr, 10);
@@ -64,14 +65,14 @@ async function startBot() {
             proxy: {
                 host: ip,
                 port: port,
-                type: 5 // SOCKS5
+                type: 5
             },
             command: 'connect',
             destination: {
                 host: ATERNOS_HOST,
                 port: ATERNOS_PORT
             },
-            timeout: 5000 // 5 ثواني كحد أقصى لتجربة البروكسي عشان ما نعطلوش العملية
+            timeout: 5000 
         };
 
         try {
@@ -82,8 +83,7 @@ async function startBot() {
                 });
             });
 
-            // إذا وصلنا هنا، يعني البروكسي شغال وقبل الاتصال
-            console.log(`[Proxy] نجح الاتصال بالبروكسي ${ip}:${port}! جاري إدخال البوت للسيرفر...`);
+            console.log(`[Proxy] نجح الاتصال بالبروكسي ${ip}:${port}! جاري إدخال البوت بالإصدار المتوافق...`);
             
             const bot = bedrock.createClient({
                 host: ATERNOS_HOST,
@@ -91,11 +91,12 @@ async function startBot() {
                 username: 'BuilderBot',
                 offline: true,
                 skipPing: true,
-                socket: info.socket // تمرير الاتصال المحمي بالبروكسي
+                version: MINECRAFT_VERSION, // فرض الإصدار المطابق للسيرفر
+                socket: info.socket 
             });
 
             bot.on('join', () => {
-                console.log('[Bot] دخلت للسيرفر بنجاح عبر البروكسي الآلي!');
+                console.log('[Bot] دخلت للسيرفر بنجاح والآن أنا متصل!');
             });
 
             bot.on('spawn', () => {
@@ -110,11 +111,10 @@ async function startBot() {
 
             bot.on('error', (err) => {
                 console.log('[Error] خطأ في البوت:', err.message || err);
-                // في حالة حدث خطأ بعد الدخول، نبحث عن بروكسي آخر
                 startBot();
             });
 
-            return; // الخروج من الدالة لأن البوت اتصل بنجاح
+            return; 
 
         } catch (err) {
             console.log(`[Proxy] البروكسي ${ip}:${port} ميت أو بطيء جداً. جاري الانتقال للتالي...`);
@@ -125,5 +125,4 @@ async function startBot() {
     setTimeout(startBot, 10000);
 }
 
-// انطلاق العملية
 startBot();
