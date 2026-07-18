@@ -1,7 +1,7 @@
 {
-  "name": "aternos-bot-direct",
+  "name": "aternos-bot-ms-auth",
   "version": "1.0.0",
-  "description": "Minecraft Bedrock Bot Direct Connection",
+  "description": "Minecraft Bot with Official Microsoft Auth",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
