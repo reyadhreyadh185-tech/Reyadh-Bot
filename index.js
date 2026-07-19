@@ -1,75 +1,96 @@
 const bedrock = require('bedrock-protocol');
 const http = require('http');
 
-// الإعدادات المرافقة لإصدار أترنوس
+// إعدادات السيرفر تاعك نيشان
 const ATERNOS_HOST = 'REA1CRAFT.aternos.me';
 const ATERNOS_PORT = 48581;
-const MINECRAFT_VERSION = '1.26.20'; // تم التغيير لأقرب إصدار متوافق رسمياً
+const MINECRAFT_VERSION = '1.26.20'; 
 
 // خادم ويب لإبقاء Render شغال
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running with random movements!\n');
+    res.end('Bot is running safely with Anti-Duplication!\n');
 });
 server.listen(process.env.PORT || 3000, () => {
     console.log('[System] 🌐 Web server linked for Render successfully.');
 });
 
 let actionInterval;
+let botClient = null;
+let reconnectTimeout = null;
 
 function startBot() {
-    console.log(`[System] 🔄 جاري محاولة إدخال البوت بالإصدار المتوافق ${MINECRAFT_VERSION} بدون حساب...`);
+    // تنظيف التيماوتس القديمة لمنع التكرار تماماً
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    if (actionInterval) clearInterval(actionInterval);
+    
+    // إذا كان كاين كليانت قديم شغال نقفلوه قبل ما نفتحو جديد
+    if (botClient) {
+        try { botClient.close(); } catch(e) {}
+        botClient = null;
+    }
+
+    console.log(`[System] 🔄 جاري محاولة الاتصال الآمن بالإصدار ${MINECRAFT_VERSION}...`);
 
     try {
-        const bot = bedrock.createClient({
+        botClient = bedrock.createClient({
             host: ATERNOS_HOST,
             port: ATERNOS_PORT,
             version: MINECRAFT_VERSION,
             username: 'BuilderBot',
-            offline: true,        // الدخول عادي بلا حساب مايكروسوفت
-            skipPing: true        // تخطي فحص السيرفر لتفادي الأخطاء
+            offline: true,        
+            skipPing: true        
         });
 
-        bot.on('join', () => {
-            console.log('[Bot] ✅ دخلت للسيرفر بنجاح وبلا كونت ميكروسوفت!');
+        botClient.on('join', () => {
+            console.log('[Bot] ✅ دخلت للسيرفر بنجاح وبلا كونت!');
         });
 
-        bot.on('spawn', () => {
-            console.log('[Bot] 🚀 راني داخل الماب دروك! جاري بدء الحركات العشوائية...');
-            startRandomActions(bot);
+        botClient.on('spawn', () => {
+            console.log('[Bot] 🚀 راني داخل الماب! جاري بدء الحركات العشوائية...');
+            startRandomActions(botClient);
         });
 
-        bot.on('disconnect', (packet) => {
-            console.log('[Bot] ❌ البوت انفصل، السبب:', packet.reason || packet);
-            clearInterval(actionInterval);
-            console.log('[System] ⏱️ إعادة محاولة الاتصال بعد 15 ثانية...');
-            setTimeout(startBot, 15000);
+        // دالة موحدة ومعزولة لإعادة الاتصال لمنع ظهور BuilderBot(2)
+        let hasDisconnected = false;
+        const handleDisconnect = (reason) => {
+            if (hasDisconnected) return; // إذا تم التعامل مع الفصل، نخرج
+            hasDisconnected = true;
+            
+            console.log(`[Bot] ❌ انفصل البوت. السبب: ${reason}`);
+            if (actionInterval) clearInterval(actionInterval);
+            
+            console.log('[System] ⏱️ إعادة المحاولة بعد 20 ثانية بنسخة واحدة ونظيفة...');
+            reconnectTimeout = setTimeout(startBot, 20000);
+        };
+
+        botClient.on('disconnect', (packet) => {
+            handleDisconnect(packet.reason || 'Server disconnected');
         });
 
-        bot.on('error', (err) => {
-            console.log('[Error] ⚠️ صرى خطأ:', err.message || err);
-            clearInterval(actionInterval);
-            console.log('[System] ⏱️ إعادة محاولة الاتصال بعد 15 ثانية...');
-            setTimeout(startBot, 15000);
+        botClient.on('error', (err) => {
+            handleDisconnect(err.message || 'Client error');
         });
 
     } catch (err) {
         console.log('[Error] 💥 فشل كلي في التشغيل:', err.message);
+        reconnectTimeout = setTimeout(startBot, 20000);
     }
 }
 
-// خوارزمية الحركات العشوائية وغير المنظمة تفادياً للطرد
+// حركات عشوائية متباعدة باش الحماية ما تعيقش بيه
 function startRandomActions(bot) {
     if (actionInterval) clearInterval(actionInterval);
 
     function loop() {
-        if (!bot.queue) return; 
+        if (!bot || !bot.queue) return; 
 
         const randomAction = Math.floor(Math.random() * 3);
-        const nextTime = Math.floor(Math.random() * (9000 - 3000 + 1)) + 3000;
+        // أوقات عشوائية متباعدة بين 6 إلى 12 ثانية لتفادي طرد الحماية
+        const nextTime = Math.floor(Math.random() * (12000 - 6000 + 1)) + 6000;
 
         if (randomAction === 0) {
-            console.log('[Action] 🦘 البوت راه ينقز دروك...');
+            console.log('[Action] 🦘 تنقاز عشوائي...');
             bot.queue('player_auth_input', {
                 flags: { jumping: true, want_jump: true },
                 position: { x: 0, y: 0, z: 0 },
@@ -78,7 +99,7 @@ function startRandomActions(bot) {
         } 
         else if (randomAction === 1) {
             const randomYaw = Math.random() * 360;
-            console.log(`[Action] 🔄 البوت دار بزاوية عشوائية: ${randomYaw.toFixed(1)}°`);
+            console.log(`[Action] 🔄 تدوار عشوائي بزاوية: ${randomYaw.toFixed(1)}°`);
             bot.queue('player_auth_input', {
                 yaw: randomYaw,
                 pitch: 0,
@@ -88,7 +109,7 @@ function startRandomActions(bot) {
         } 
         else if (randomAction === 2) {
             const randomSlot = Math.floor(Math.random() * 9);
-            console.log(`[Action] 🎒 البوت بدل السلوت تاع اليد عشوائياً: Slot ${randomSlot}`);
+            console.log(`[Action] 🎒 تبديل سلوت اليد: Slot ${randomSlot}`);
             bot.queue('mob_equipment', {
                 runtime_entity_id: bot.entityId,
                 item: { network_id: 0 },
