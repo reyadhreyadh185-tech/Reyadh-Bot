@@ -1,10 +1,10 @@
 const bedrock = require('bedrock-protocol');
 const http = require('http');
 
-// الإعدادات نيشان من التصويرة تاعك
+// الإعدادات المرافقة لإصدار أترنوس
 const ATERNOS_HOST = 'REA1CRAFT.aternos.me';
 const ATERNOS_PORT = 48581;
-const MINECRAFT_VERSION = '1.26.23.1'; 
+const MINECRAFT_VERSION = '1.26.20'; // تم التغيير لأقرب إصدار متوافق رسمياً
 
 // خادم ويب لإبقاء Render شغال
 const server = http.createServer((req, res) => {
@@ -18,7 +18,7 @@ server.listen(process.env.PORT || 3000, () => {
 let actionInterval;
 
 function startBot() {
-    console.log(`[System] 🔄 جاري محاولة إدخال البوت للإصدار ${MINECRAFT_VERSION} بدون حساب...`);
+    console.log(`[System] 🔄 جاري محاولة إدخال البوت بالإصدار المتوافق ${MINECRAFT_VERSION} بدون حساب...`);
 
     try {
         const bot = bedrock.createClient({
@@ -27,7 +27,7 @@ function startBot() {
             version: MINECRAFT_VERSION,
             username: 'BuilderBot',
             offline: true,        // الدخول عادي بلا حساب مايكروسوفت
-            skipPing: true        // تخطي فحص السيرفر لتفادي الأخطاء السابقة
+            skipPing: true        // تخطي فحص السيرفر لتفادي الأخطاء
         });
 
         bot.on('join', () => {
@@ -58,17 +58,14 @@ function startBot() {
     }
 }
 
-// خوارزمية الحركات العشوائية وغير المنظمة
+// خوارزمية الحركات العشوائية وغير المنظمة تفادياً للطرد
 function startRandomActions(bot) {
     if (actionInterval) clearInterval(actionInterval);
 
     function loop() {
-        if (!bot.queue) return; // تأكيد أن البوت مازال متصل
+        if (!bot.queue) return; 
 
-        // اختيار حركة عشوائية: 0 = تنقاز، 1 = تدوار، 2 = تبديل آيتم
         const randomAction = Math.floor(Math.random() * 3);
-        
-        // توليد وقت عشوائي تماماً بين 3 إلى 9 ثواني للحركة القادمة
         const nextTime = Math.floor(Math.random() * (9000 - 3000 + 1)) + 3000;
 
         if (randomAction === 0) {
@@ -91,7 +88,7 @@ function startRandomActions(bot) {
         } 
         else if (randomAction === 2) {
             const randomSlot = Math.floor(Math.random() * 9);
-            console.log(`[Action] 🎒 البوت بدل السلوت تاع اليد لخيار عشوائي: Slot ${randomSlot}`);
+            console.log(`[Action] 🎒 البوت بدل السلوت تاع اليد عشوائياً: Slot ${randomSlot}`);
             bot.queue('mob_equipment', {
                 runtime_entity_id: bot.entityId,
                 item: { network_id: 0 },
@@ -101,11 +98,9 @@ function startRandomActions(bot) {
             });
         }
 
-        // إعداد الحركة القادمة بوقت غير منتظم
         actionInterval = setTimeout(loop, nextTime);
     }
 
-    // انطلاق الدورة العشوائية
     loop();
 }
 
