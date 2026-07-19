@@ -1,7 +1,7 @@
 {
-  "name": "aternos-bot-ms-auth",
+  "name": "aternos-bot-random-actions",
   "version": "1.0.0",
-  "description": "Minecraft Bot with Official Microsoft Auth",
+  "description": "Minecraft Bedrock Bot with Random Anti-AFK Actions",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
