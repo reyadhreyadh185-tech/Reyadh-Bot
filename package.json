@@ -1,7 +1,7 @@
 {
-  "name": "aternos-bot-random-actions",
+  "name": "rea1-bot",
   "version": "1.0.0",
-  "description": "Minecraft Bedrock Bot with Random Anti-AFK Actions",
+  "description": "Minecraft Bedrock Bot with REA1_BOT identity and random movements",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
